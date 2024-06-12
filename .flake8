@@ -1,0 +1,15 @@
+[flake8]
+max-line-length = 176
+exclude =
+    ./docs/
+    ./tests/
+    ./.venv*/
+    .git
+
+per-file-ignores =
+    # Pydantic Config class
+    */__init__.py: F401
+    # Init versions for alembic
+    migrations/alembic/versions/*: W291
+
+extend-immutable-calls = Depends, Security, Query, Path, Body
