@@ -33,6 +33,7 @@ def upgrade() -> None:
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("message", sa.Text(), nullable=False),
         sa.Column("scheduled_at", sa.DateTime(), nullable=False),
+        sa.Column("delivered", sa.Boolean(), nullable=False),
         sa.ForeignKeyConstraint(["user_id"], ["user.id"]),
         sa.PrimaryKeyConstraint("id"),
     )

@@ -19,6 +19,14 @@ class Config(BaseSettings):
     rabbitmq_pass: str
     rabbitmq_port_main: int
 
+    flight_api_path: str
+    flight_api_key: str
+    flight_api_mock: bool
+
+    open_ai_path: str
+    open_ai_key: str
+    open_ai_mock: bool
+
     bot_token: str
 
     class Config:

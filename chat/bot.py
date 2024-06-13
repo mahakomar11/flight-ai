@@ -19,6 +19,7 @@ from chat.constants.texts import (
     GREETING_TEXT_FOR_KNOWN,
     GREETING_TEXT_FOR_UNKNOWN,
 )
+from helpers.user_form import get_user_answers
 from src.config.config import get_config
 from src.infrastructure.broker.rabbit import poll_consuming, publish_message
 from src.infrastructure.database.repositories.user import UserRepository
@@ -66,8 +67,8 @@ async def command_filled(message: Message) -> None:
     This handler receives messages with `/filled` command
     """
     logging.warning(f"Getting form data for user {message.chat.id}")
-    form_data = {}  # TODO: change to getting info from form by phone
-    user = User(id=message.chat.id, phone="mock", answers=form_data)
+    user_answers = get_user_answers("mock")  # TODO: change to phone
+    user = User(id=message.chat.id, phone="mock", answers=user_answers)
     async for session in get_session(config):
         await UserRepository(session).post(user)
     await message.answer(AUTH_TEXT)
@@ -110,12 +111,16 @@ def consume_responses(loop: asyncio.BaseEventLoop):
         # Send the message to the specified user_id
         asyncio.run_coroutine_threadsafe(send_message(user_id, message_text), loop)
 
+        channel.basic_ack(method.delivery_tag)
+
     poll_consuming(RESPONSES_QUEUE_NAME, on_message_callback)
 
 
 async def send_message(user_id: int, message_text: str):
     try:
-        await bot.send_message(user_id, message_text)
+        await bot.send_message(
+            user_id, message_text.replace("**", "*"), parse_mode=ParseMode.MARKDOWN
+        )
     except Exception as e:
         logging.error(f"Error sending message to {user_id}: {e}")
 

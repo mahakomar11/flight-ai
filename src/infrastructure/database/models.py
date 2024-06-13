@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Text
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.dialects.postgresql import UUID as DB_UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -23,3 +23,4 @@ class Recommendation(Base):
     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     message = Column(Text, nullable=False)
     scheduled_at = Column(DateTime, index=True, nullable=False)
+    delivered = Column(Boolean, nullable=False)

@@ -1,0 +1,154 @@
+{
+  "UT 785 2024-06-14": {
+    "data": [
+      {
+        "carrier": {
+          "iata": "UT",
+          "icao": "UTA"
+        },
+        "serviceSuffix": "",
+        "flightNumber": 785,
+        "sequenceNumber": 1,
+        "flightType": "Scheduled",
+        "departure": {
+          "airport": {
+            "iata": "VKO",
+            "icao": "UUWW"
+          },
+          "terminal": "A",
+          "country": {
+            "code": "RU"
+          },
+          "date": {
+            "local": "2024-06-14",
+            "utc": "2024-06-14"
+          },
+          "time": {
+            "local": "20:50",
+            "utc": "17:50"
+          }
+        },
+        "arrival": {
+          "airport": {
+            "iata": "EVN",
+            "icao": "UDYZ"
+          },
+          "terminal": "",
+          "country": {
+            "code": "AM"
+          },
+          "date": {
+            "local": "2024-06-15",
+            "utc": "2024-06-14"
+          },
+          "time": {
+            "local": "01:25",
+            "utc": "21:25"
+          }
+        },
+        "elapsedTime": 215,
+        "cargoTonnage": 10.08,
+        "aircraftType": {
+          "iata": "762"
+        },
+        "serviceType": {
+          "iata": "J"
+        },
+        "segmentInfo": {
+          "numberOfStops": 0,
+          "intermediateAirports": {
+            "iata": []
+          }
+        },
+        "codeshare": {
+          "jointOperationAirlineDesignators": [],
+          "marketingFlights": []
+        },
+        "scheduleInstanceKey": "80fdf500157148cc31e8cdd6593a858dd4fe9a86b010f0580fc9559892bb0d16",
+        "statusKey": "5afe45913d0c8146264d5d3223d09b40c43ac4f115895813802991f06cf57de4"
+      }
+    ],
+    "paging": {
+      "limit": 100,
+      "totalCount": 1,
+      "totalPages": 1,
+      "next": ""
+    }
+  },
+  "G9 508 2024-06-14": {
+    "data": [
+      {
+        "carrier": {
+          "iata": "G9",
+          "icao": "ABY"
+        },
+        "serviceSuffix": "",
+        "flightNumber": 508,
+        "sequenceNumber": 1,
+        "flightType": "Scheduled",
+        "departure": {
+          "airport": {
+            "iata": "SHJ",
+            "icao": "OMSJ"
+          },
+          "terminal": "",
+          "country": {
+            "code": "AE"
+          },
+          "date": {
+            "local": "2024-06-14",
+            "utc": "2024-06-14"
+          },
+          "time": {
+            "local": "08:20",
+            "utc": "04:20"
+          }
+        },
+        "arrival": {
+          "airport": {
+            "iata": "CMB",
+            "icao": "VCBI"
+          },
+          "terminal": "",
+          "country": {
+            "code": "LK"
+          },
+          "date": {
+            "local": "2024-06-14",
+            "utc": "2024-06-14"
+          },
+          "time": {
+            "local": "14:20",
+            "utc": "08:50"
+          }
+        },
+        "elapsedTime": 270,
+        "cargoTonnage": 9.4,
+        "aircraftType": {
+          "iata": "320"
+        },
+        "serviceType": {
+          "iata": "J"
+        },
+        "segmentInfo": {
+          "numberOfStops": 0,
+          "intermediateAirports": {
+            "iata": []
+          }
+        },
+        "codeshare": {
+          "jointOperationAirlineDesignators": [],
+          "marketingFlights": []
+        },
+        "scheduleInstanceKey": "2f976fb440ea72804ef84992c0fb29f4216ebdec9989097ed6aa04cf9d1c068e",
+        "statusKey": "ad1965537cd2a650fc5aca2d15c72a4e09918df493deece05fc6d3f633c87f7e"
+      }
+    ],
+    "paging": {
+      "limit": 100,
+      "totalCount": 1,
+      "totalPages": 1,
+      "next": ""
+    }
+  }
+}

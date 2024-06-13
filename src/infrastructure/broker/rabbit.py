@@ -29,9 +29,7 @@ def get_channel(queues: list[str] = None) -> BlockingChannel:
 
 def poll_consuming(queue: str, on_message_callback: Callable):
     channel = get_channel([queue])
-    channel.basic_consume(
-        queue=queue, on_message_callback=on_message_callback, auto_ack=True
-    )
+    channel.basic_consume(queue=queue, on_message_callback=on_message_callback)
 
     logging.info("Started RabbitMQ listener...")
     channel.start_consuming()
@@ -40,8 +38,6 @@ def poll_consuming(queue: str, on_message_callback: Callable):
 def publish_message(queue: str, data: dict):
     channel = get_channel([queue])
     try:
-        channel.basic_publish(
-            exchange="", routing_key="requests_queue", body=json.dumps(data)
-        )
+        channel.basic_publish(exchange="", routing_key=queue, body=json.dumps(data))
     finally:
         channel.close()

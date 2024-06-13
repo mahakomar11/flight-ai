@@ -8,7 +8,7 @@ VENV_PYTHON := $(VENV_PATH)/bin/python
 DEV_ENV_FILE := .env-dev
 DEV_COMPOSE_FILE := docker-compose.dev.yml
 
-SERVICES ?= ./chat ./src ./migrations
+SERVICES ?= ./chat ./src ./migrations ./recommendations
 
 ALEMBIC_CONFIG := alembic.ini
 
