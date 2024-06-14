@@ -1,3 +1,4 @@
+import contextlib
 from functools import lru_cache
 
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
@@ -15,6 +16,7 @@ def get_engine(db_url: str) -> AsyncEngine:
     )
 
 
+@contextlib.asynccontextmanager
 async def get_session(config: Config):
     engine = get_engine(config.async_postgres_url)
 

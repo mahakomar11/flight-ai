@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import Date, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infrastructure.database.models import Recommendation as RecommendationORM
@@ -35,8 +35,8 @@ class RecommendationRepository:
     async def filter_by_date(self, date: datetime) -> list[Recommendation]:
         result = await self._session.execute(
             select(RecommendationORM)
-            .where(RecommendationORM.scheduled_at == date)
-            .where(RecommendationORM.delivered is False)
+            .where(RecommendationORM.scheduled_at.cast(Date) == date.date())
+            .where(RecommendationORM.delivered == False)  # noqa
         )
         recommendations_orm = result.scalars().all()
         return [

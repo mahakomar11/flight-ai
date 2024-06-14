@@ -46,5 +46,6 @@ I've designed a personalized sleep and circadian protocol to help you manage jet
 - **Physical Activity**: Continue with light evening exercise.
 - **Light Exposure**: Get ample sunlight exposure in the morning and early afternoon.
 - **Sleep Onset and Offset**: Aim for a consistent bedtime around 11:00 PM and wake-up time of 7:00 AM to maintain your adjusted schedule.
+---
 
 By following this protocol, you’ll help your body adjust to the new time zone more comfortably and maintain optimal alertness. Safe travels!

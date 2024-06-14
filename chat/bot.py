@@ -21,13 +21,14 @@ from chat.constants.texts import (
 )
 from helpers.user_form import get_user_answers
 from src.config.config import get_config
+from src.infrastructure.broker.constants import (
+    REQUESTS_QUEUE_NAME,
+    RESPONSES_QUEUE_NAME,
+)
 from src.infrastructure.broker.rabbit import poll_consuming, publish_message
 from src.infrastructure.database.repositories.user import UserRepository
 from src.infrastructure.database.session import get_session
 from src.schemas.user import User
-
-RESPONSES_QUEUE_NAME = "responses_queue"
-REQUESTS_QUEUE_NAME = "requests_queue"
 
 config = get_config()
 bot = Bot(
@@ -50,7 +51,7 @@ async def command_start(message: Message) -> None:
     This handler receives messages with `/start` command
     """
     logging.debug(f"Got /start command from user {message.chat.id}")
-    async for session in get_session(config):
+    async with get_session(config) as session:
         logging.debug(f"Getting user with id {message.chat.id}")
         user = await UserRepository(session).get(user_id=message.chat.id)
         logging.debug(f"Got user {user}")
@@ -69,7 +70,7 @@ async def command_filled(message: Message) -> None:
     logging.warning(f"Getting form data for user {message.chat.id}")
     user_answers = get_user_answers("mock")  # TODO: change to phone
     user = User(id=message.chat.id, phone="mock", answers=user_answers)
-    async for session in get_session(config):
+    async with get_session(config) as session:
         await UserRepository(session).post(user)
     await message.answer(AUTH_TEXT)
 
@@ -92,7 +93,7 @@ async def process_flight_date(message: Message, state: FSMContext) -> None:
     data = await state.update_data(flight_date=message.text)
     await state.clear()
     await message.answer(
-        f"Great! Your flight number is {data['flight_number']} and flight date is {data['flight_date']}."
+        f"Great! Your flight number is {data['flight_number']} and flight date is {data['flight_date']}. "
         f"We are preparing recommendations for you."
     )
     data["user_id"] = message.chat.id

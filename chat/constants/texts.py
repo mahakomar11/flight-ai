@@ -16,9 +16,9 @@ Great! You are registered in our system. If you want flight recommendations, use
 """
 
 FLIGHT_NUMBER_QUESTION = """
-Send your flight number, for example, QF103.
+Send your flight number, for example, G9508.
 """
 
 FLIGHT_DATE_QUESTION = """
-Send your flight date in YYYY-MM-DD format, for example, 2024-06-13 for 13 June, 2024.
+Send your flight date in YYYY-MM-DD format, for example, 2024-06-14 for 14 June, 2024.
 """

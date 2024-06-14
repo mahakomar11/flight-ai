@@ -5,7 +5,7 @@ from recommendations.dto.flight import Flight
 from recommendations.requesters.openai.network import OpenAIClient
 
 
-class GetRecommendationService:
+class GenerationService:
     NUMBER_OF_DAYS = 5
 
     def __init__(self, openai_client: OpenAIClient, model: str = "gpt-4o-2024-05-13"):
@@ -35,19 +35,19 @@ class GetRecommendationService:
             "[Greeting]\n"
             "[Introduction]\n"
             "---\n"
-            "**[date of day -2]**\n"
+            "☀**[date of day -2]**\n"
             "[recommendations for day -2]\n"
             "---\n"
-            "**[date of day -1]**\n"
+            "☀**[date of day -1]**\n"
             "[recommendations for day -1]\n"
             "---\n"
-            "**[date of flight day]**\n"
+            "☀**[date of flight day]**\n"
             "[recommendations for flight day]\n"
             "---\n"
-            "**[date of day +1]**\n"
+            "☀**[date of day +1]**\n"
             "[recommendations for day +1]\n"
             "---\n"
-            "**[date of day +2]**\n"
+            "☀**[date of day +2]**\n"
             "[recommendations for day +2]\n"
             "---\n"
             "[Conclusion]"
