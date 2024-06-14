@@ -1,43 +1,55 @@
+import asyncio
+import contextlib
 import json
 import logging
-from typing import Callable
+from typing import Awaitable, Callable
 
-import pika
-from pika.adapters.blocking_connection import BlockingChannel
+from aio_pika import Message, connect
+from aio_pika.abc import AbstractConnection, AbstractIncomingMessage
 
-from src.config.config import get_config
+from src.config.config import Config
 
 
-def get_channel(queues: list[str] = None) -> BlockingChannel:
-    config = get_config()
+@contextlib.asynccontextmanager
+async def get_broker_connection(config: Config):
+    connection = await connect(config.rabbitmq_url)
+    async with connection:
+        logging.info("Opening connection with RabbitMQ")
+        yield connection
+        logging.info("Closing connection with RabbitMQ")
 
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(
-            host=config.rabbitmq_host,
-            port=config.rabbitmq_port_main,
-            credentials=pika.PlainCredentials(
-                username=config.rabbitmq_user, password=config.rabbitmq_pass
-            ),
-        )
+
+async def poll_consuming(
+    connection: AbstractConnection,
+    queue_name: str,
+    process_message_callback: Callable[[dict], Awaitable[None]],
+) -> None:
+    async def on_message(message: AbstractIncomingMessage) -> None:
+        logging.debug("Received message %r" % message)
+        try:
+            await process_message_callback(json.loads(message.body.decode()))
+            await message.ack()
+        except Exception as e:
+            logging.error(f"Error occured while processing message {message}: {e}")
+            await message.nack()
+
+    channel = await connection.channel()
+    queue = await channel.declare_queue(queue_name)
+
+    await queue.consume(on_message)
+
+    logging.info(f"Waiting for messages in queue {queue}")
+    await asyncio.Future()
+
+
+async def publish_message(
+    connection: AbstractConnection, queue_name: str, message: dict
+):
+    channel = await connection.channel()
+
+    queue = await channel.declare_queue(queue_name)
+
+    await channel.default_exchange.publish(
+        Message(json.dumps(message).encode()), routing_key=queue.name
     )
-    channel = connection.channel()
-    for queue in queues:
-        channel.queue_declare(queue=queue)
-
-    return channel
-
-
-def poll_consuming(queue: str, on_message_callback: Callable):
-    channel = get_channel([queue])
-    channel.basic_consume(queue=queue, on_message_callback=on_message_callback)
-
-    logging.info("Started RabbitMQ listener...")
-    channel.start_consuming()
-
-
-def publish_message(queue: str, data: dict):
-    channel = get_channel([queue])
-    try:
-        channel.basic_publish(exchange="", routing_key=queue, body=json.dumps(data))
-    finally:
-        channel.close()
+    logging.info(f"Publish message {message}, to queue {queue_name}")

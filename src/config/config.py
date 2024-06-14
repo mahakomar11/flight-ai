@@ -40,6 +40,10 @@ class Config(BaseSettings):
     def async_postgres_url(self):
         return f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_name}"
 
+    @property
+    def rabbitmq_url(self):
+        return f"amqp://{self.rabbitmq_user}:{self.rabbitmq_pass}@{self.rabbitmq_host}:{self.rabbitmq_port_main}/"
+
     def __new__(cls, _env_file):
         if not hasattr(cls, "instance"):
             cls.instance = super(Config, cls).__new__(cls)

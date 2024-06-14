@@ -1,8 +1,6 @@
 import asyncio
-import json
 import logging
 import sys
-import threading
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
@@ -25,9 +23,14 @@ from src.infrastructure.broker.constants import (
     REQUESTS_QUEUE_NAME,
     RESPONSES_QUEUE_NAME,
 )
-from src.infrastructure.broker.rabbit import poll_consuming, publish_message
+from src.infrastructure.broker.rabbit import (
+    get_broker_connection,
+    poll_consuming,
+    publish_message,
+)
 from src.infrastructure.database.repositories.user import UserRepository
 from src.infrastructure.database.session import get_session
+from src.schemas.exchange_messages import ResponseMessage
 from src.schemas.user import User
 
 config = get_config()
@@ -38,6 +41,7 @@ bot = Bot(
 dp = Dispatcher()
 
 form_router = Router()
+dp.include_router(form_router)
 
 
 class Form(StatesGroup):
@@ -98,43 +102,32 @@ async def process_flight_date(message: Message, state: FSMContext) -> None:
     )
     data["user_id"] = message.chat.id
     logging.warning(f"Publishing to queue {data}")
-    publish_message(REQUESTS_QUEUE_NAME, data)
+    async with get_broker_connection(config) as connection:
+        await publish_message(connection, REQUESTS_QUEUE_NAME, data)
 
 
-def consume_responses(loop: asyncio.BaseEventLoop):
-    def on_message_callback(channel, method, properties, body):
-        message = json.loads(body)
+async def send_response(exchange_message: dict):
+    response = ResponseMessage(**exchange_message)
 
-        user_id = message["user_id"]
-        message_text = message["message"]
+    logging.debug(f"Got message {response.message} for user {response.user_id}")
 
-        logging.warning(f"Got message {message} for user {user_id}")
-        # Send the message to the specified user_id
-        asyncio.run_coroutine_threadsafe(send_message(user_id, message_text), loop)
-
-        channel.basic_ack(method.delivery_tag)
-
-    poll_consuming(RESPONSES_QUEUE_NAME, on_message_callback)
-
-
-async def send_message(user_id: int, message_text: str):
     try:
         await bot.send_message(
-            user_id, message_text.replace("**", "*"), parse_mode=ParseMode.MARKDOWN
+            response.user_id,
+            response.message.replace("**", "*"),
+            parse_mode=ParseMode.MARKDOWN,
         )
     except Exception as e:
-        logging.error(f"Error sending message to {user_id}: {e}")
+        logging.error(f"Error sending message to {response.user_id}: {e}")
+
+
+async def consume_responses():
+    async with get_broker_connection(config) as connection:
+        await poll_consuming(connection, RESPONSES_QUEUE_NAME, send_response)
 
 
 async def main() -> None:
-    dp.include_router(form_router)
-
-    responses_consumer_thread = threading.Thread(
-        target=consume_responses, args=(asyncio.get_event_loop(),), daemon=True
-    )
-    responses_consumer_thread.start()
-
-    await dp.start_polling(bot)
+    await asyncio.gather(dp.start_polling(bot), consume_responses())
 
 
 if __name__ == "__main__":
