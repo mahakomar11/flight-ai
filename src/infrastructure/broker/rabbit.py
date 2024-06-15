@@ -9,14 +9,16 @@ from aio_pika.abc import AbstractConnection, AbstractIncomingMessage
 
 from src.config.config import Config
 
+LOGGER = logging.getLogger(__name__)
+
 
 @contextlib.asynccontextmanager
 async def get_broker_connection(config: Config):
     connection = await connect(config.rabbitmq_url)
     async with connection:
-        logging.info("Opening connection with RabbitMQ")
+        LOGGER.info("Opening connection with RabbitMQ")
         yield connection
-        logging.info("Closing connection with RabbitMQ")
+        LOGGER.info("Closing connection with RabbitMQ")
 
 
 async def poll_consuming(
@@ -25,12 +27,12 @@ async def poll_consuming(
     process_message_callback: Callable[[dict], Awaitable[None]],
 ) -> None:
     async def on_message(message: AbstractIncomingMessage) -> None:
-        logging.debug("Received message %r" % message)
+        LOGGER.debug("Received message %r" % message)
         try:
             await process_message_callback(json.loads(message.body.decode()))
             await message.ack()
         except Exception as e:
-            logging.error(f"Error occured while processing message {message}: {e}")
+            LOGGER.error(f"Error occured while processing message {message}: {e}")
             await message.nack()
 
     channel = await connection.channel()
@@ -38,7 +40,7 @@ async def poll_consuming(
 
     await queue.consume(on_message)
 
-    logging.info(f"Waiting for messages in queue {queue}")
+    LOGGER.info(f"Waiting for messages in queue {queue}")
     await asyncio.Future()
 
 
@@ -52,4 +54,4 @@ async def publish_message(
     await channel.default_exchange.publish(
         Message(json.dumps(message).encode()), routing_key=queue.name
     )
-    logging.info(f"Publish message {message}, to queue {queue_name}")
+    LOGGER.info(f"Publish message {message}, to queue {queue_name}")

@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-migrate
+  labels:
+    app: {{ .Release.Name }}-migrate
+  annotations:
+    "helm.sh/hook": pre-upgrade,pre-install
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      name: {{ .Release.Name }}-migrate
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: {{ .Release.Name }}-migrate
+        image: "{{ .Values.migrations.image.registry }}/{{ .Values.migrations.image.repository }}:{{ .Values.migrations.image.tag }}"
+        envFrom:
+          - secretRef:
+              name: {{ .Values.secrets.secret_name }}
+          - configMapRef:
+              name: {{ .Release.Name }}-env
+        env:
+          - name: POSTGRES_HOST
+            {{ if .Values.postgres.external.to_use }}
+            value: {{ .Values.postgres.external.host }}
+            {{ else }}
+            value: {{ .Release.Name }}-db-postgres
+            {{ end }}
+          - name: POSTGRES_PORT
+            value: "{{ .Values.postgres.port }}"
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: POSTGRES_PASSWORD
+                name: {{ .Values.secrets.secret_name }}
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                key: POSTGRES_USER
+                name: {{ .Values.secrets.secret_name }}
+          - name: POSTGRES_NAME
+            valueFrom:
+              secretKeyRef:
+                key: POSTGRES_NAME
+                name: {{ .Values.secrets.secret_name }}
+        command: ["alembic"]
+        args: ["upgrade", "head"]
+  backoffLimit: 3

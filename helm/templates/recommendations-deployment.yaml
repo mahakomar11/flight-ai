@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Release.Name }}-recommendations
+  name: {{ .Release.Name }}-recommendations
+spec:
+  replicas: {{ .Values.recommendations.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-recommendations
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels:
+        app: {{ .Release.Name }}-recommendations
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-recommendations
+          image: "{{ .Values.recommendations.image.registry }}/{{ .Values.recommendations.image.repository }}:{{ .Values.recommendations.image.tag }}"
+          resources:
+            {{- toYaml .Values.recommendations.resources | nindent 12 }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.secrets.secret_name }}
+            - configMapRef:
+                name: {{ .Release.Name }}-env
+          imagePullPolicy: Always
+          startupProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "pidof -x python"
+            periodSeconds: 1
+            failureThreshold: 30
+          livenessProbe:
+            periodSeconds: 20
+            failureThreshold: 3
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "pidof -x python"
+      restartPolicy: Always

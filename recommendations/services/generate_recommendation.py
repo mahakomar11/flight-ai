@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from recommendations.dto.flight import Flight
 from recommendations.requesters.openai.network import OpenAIClient
 
+LOGGER = logging.getLogger(__name__)
+
 
 class GenerationService:
     NUMBER_OF_DAYS = 5
@@ -65,7 +67,7 @@ class GenerationService:
 
         recommendation_parts = []
         while len(recommendation_parts) != self.NUMBER_OF_DAYS + 2:
-            logging.warning(
+            LOGGER.warning(
                 f"Try again ask the model, now {len(recommendation_parts)} parts of recommendation gotten"
             )
             raw_recommendation = await self.openai_client.create_chat_completion(

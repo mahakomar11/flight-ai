@@ -5,12 +5,18 @@ PYTHON_PATH := $(shell which python3.11)
 VENV_PATH ?= ./.venv
 VENV_PYTHON := $(VENV_PATH)/bin/python
 
-DEV_ENV_FILE := .env-dev
+DEV_ENV_FILE ?= .env-dev
 DEV_COMPOSE_FILE := docker-compose.dev.yml
+
+ENV_FILE ?= .env
+COMPOSE_FILE := docker-compose.dev.yml
 
 SERVICES ?= ./chat ./src ./migrations ./recommendations
 
 ALEMBIC_CONFIG := alembic.ini
+
+RELEASE_NAME ?= flight-ai
+NAMESPACE ?= test-app
 
 ############### INSTALL ###############
 
@@ -61,10 +67,10 @@ build-format:
 ############### DEBUG #################
 
 dev-compose-up:
-	docker-compose --env-file $(DEV_ENV_FILE) -f $(DEV_COMPOSE_FILE) up -d --build
+	ENV_FILE=$(DEV_ENV_FILE) docker-compose --env-file $(DEV_ENV_FILE) -f $(DEV_COMPOSE_FILE) up -d --build
 
 dev-compose-down:
-	docker-compose --env-file $(DEV_ENV_FILE) -f $(DEV_COMPOSE_FILE) down
+	ENV_FILE=$(DEV_ENV_FILE) docker-compose --env-file $(DEV_ENV_FILE) -f $(DEV_COMPOSE_FILE) down
 
 ############### CHECK ###############
 
@@ -141,3 +147,17 @@ db-clear:
 	@echo "Clearing database"
 	DOWNGRADE_TO=base $(MAKE) .db-downgrade
 	$(MAKE) .db-migrate
+
+############### DEPLOY ###############
+build-and-push:
+	ENV_FILE=$(ENV_FILE) docker-compose -f $(COMPOSE_FILE) build
+	ENV_FILE=$(ENV_FILE) docker-compose -f $(COMPOSE_FILE) push
+
+deploy:
+	helm install -f helm/values.yaml ${RELEASE_NAME} ./helm --namespace ${NAMESPACE}
+
+upgrade:
+	helm upgrade -f helm/values.yaml ${RELEASE_NAME} ./helm --namespace ${NAMESPACE}
+
+uninstall:
+	helm uninstall ${RELEASE_NAME} --namespace ${NAMESPACE}

@@ -1,6 +1,42 @@
 version: "3.7"
 
 services:
+  chat:
+    container_name: flightai_chat
+    image: us-central1-docker.pkg.dev/hybrid-carrier-337214/app/flightai_chat:latest
+    restart: always
+    build:
+      context: .
+      dockerfile: chat/Dockerfile
+    env_file:
+      - ${ENV_FILE}
+    environment:
+      POSTGRES_HOST: flightai_database
+      RABBITMQ_HOST: flightai_rabbitmq
+    networks:
+      - flightai
+    depends_on:
+      - database
+      - rabbitmq
+
+  recommendations:
+    container_name: flightai_recommendations
+    image: us-central1-docker.pkg.dev/hybrid-carrier-337214/app/flightai_recommendations:latest
+    restart: always
+    build:
+      context: .
+      dockerfile: recommendations/Dockerfile
+    env_file:
+      - ${ENV_FILE}
+    environment:
+      POSTGRES_HOST: flightai_database
+      RABBITMQ_HOST: flightai_rabbitmq
+    networks:
+      - flightai
+    depends_on:
+      - database
+      - rabbitmq
+
   database:
     container_name: flightai_database
     image: postgres:14
@@ -20,12 +56,13 @@ services:
 
   migrations:
     container_name: flightai_migrations
+    image: us-central1-docker.pkg.dev/hybrid-carrier-337214/app/flightai_migrations:latest
     restart: on-failure:3
     build:
       context: .
       dockerfile: migrations/Dockerfile
     env_file:
-      - .env-dev
+      - ${ENV_FILE}
     environment:
       POSTGRES_HOST: flightai_database
     command: alembic upgrade head

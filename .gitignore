@@ -4,3 +4,4 @@ data/
 .env
 
 *.py[cod]
+/secret.yml

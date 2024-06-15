@@ -1,6 +1,5 @@
 import asyncio
-import logging
-import sys
+import logging.config
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
@@ -30,9 +29,12 @@ from src.infrastructure.broker.rabbit import (
 )
 from src.infrastructure.database.repositories.user import UserRepository
 from src.infrastructure.database.session import get_session
+from src.logger.logger import build_log_config
 from src.schemas.exchange_messages import ResponseMessage
 from src.schemas.user import User
 
+logging.config.dictConfig(build_log_config("DEBUG"))
+LOGGER = logging.getLogger(__name__)
 config = get_config()
 bot = Bot(
     token=config.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML)
@@ -54,11 +56,11 @@ async def command_start(message: Message) -> None:
     """
     This handler receives messages with `/start` command
     """
-    logging.debug(f"Got /start command from user {message.chat.id}")
+    LOGGER.debug(f"Got /start command from user {message.chat.id}")
     async with get_session(config) as session:
-        logging.debug(f"Getting user with id {message.chat.id}")
+        LOGGER.debug(f"Getting user with id {message.chat.id}")
         user = await UserRepository(session).get(user_id=message.chat.id)
-        logging.debug(f"Got user {user}")
+        LOGGER.debug(f"Got user {user}")
 
     if user is None:
         await message.answer(GREETING_TEXT_FOR_UNKNOWN)
@@ -71,7 +73,7 @@ async def command_filled(message: Message) -> None:
     """
     This handler receives messages with `/filled` command
     """
-    logging.warning(f"Getting form data for user {message.chat.id}")
+    LOGGER.warning(f"Getting form data for user {message.chat.id}")
     user_answers = get_user_answers("mock")  # TODO: change to phone
     user = User(id=message.chat.id, phone="mock", answers=user_answers)
     async with get_session(config) as session:
@@ -101,7 +103,7 @@ async def process_flight_date(message: Message, state: FSMContext) -> None:
         f"We are preparing recommendations for you."
     )
     data["user_id"] = message.chat.id
-    logging.warning(f"Publishing to queue {data}")
+    LOGGER.warning(f"Publishing to queue {data}")
     async with get_broker_connection(config) as connection:
         await publish_message(connection, REQUESTS_QUEUE_NAME, data)
 
@@ -109,7 +111,7 @@ async def process_flight_date(message: Message, state: FSMContext) -> None:
 async def send_response(exchange_message: dict):
     response = ResponseMessage(**exchange_message)
 
-    logging.debug(f"Got message {response.message} for user {response.user_id}")
+    LOGGER.debug(f"Got message {response.message} for user {response.user_id}")
 
     try:
         await bot.send_message(
@@ -118,7 +120,7 @@ async def send_response(exchange_message: dict):
             parse_mode=ParseMode.MARKDOWN,
         )
     except Exception as e:
-        logging.error(f"Error sending message to {response.user_id}: {e}")
+        LOGGER.error(f"Error sending message to {response.user_id}: {e}")
 
 
 async def consume_responses():
@@ -131,5 +133,5 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    LOGGER.debug("Starting chat application")
     asyncio.run(main())

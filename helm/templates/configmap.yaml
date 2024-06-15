@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-env
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-3"
+    "helm.sh/hook-delete-policy": before-hook-creation
+data:
+  RABBITMQ_PORT_API: "{{ .Values.broker.containerPorts.manager }}"
+  RABBITMQ_PORT_MAIN: "{{ .Values.broker.containerPorts.amqp }}"
+  RABBITMQ_HOST: {{ .Release.Name }}-broker
+  {{ if .Values.postgres.external.to_use }}
+  POSTGRES_HOST: {{ .Values.postgres.external.host }}
+  {{ else }}
+  POSTGRES_HOST: {{ .Release.Name }}-db-postgres
+  PGDATA: {{ .Values.postgres.pg_data }}
+  {{ end }}
+  POSTGRES_PORT: "{{ .Values.postgres.port }}"
+  FLIGHT_API_MOCK: "{{ .Values.recommendations.flight_api.is_mock }}"
+  FLIGHT_API_PATH: {{ .Values.recommendations.flight_api.path }}
+  OPEN_AI_MOCK: "{{ .Values.recommendations.openai_api.is_mock }}"
+  OPEN_AI_PATH: {{ .Values.recommendations.openai_api.path }}

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Release.Name }}-broker
+  name: {{ .Release.Name }}-broker
+spec:
+  ports:
+    - name: "rabbit-api"
+      port: {{ .Values.broker.containerPorts.manager }}
+      targetPort: {{ .Values.broker.containerPorts.manager }}
+    - name: "rabbit"
+      port: {{ .Values.broker.containerPorts.amqp }}
+      targetPort: {{ .Values.broker.containerPorts.amqp }}
+  selector:
+    app: {{ .Release.Name }}-broker

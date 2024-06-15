@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Release.Name }}-broker
+  name: {{ .Release.Name }}-broker
+spec:
+  replicas: {{ .Values.broker.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-broker
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-broker
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-broker
+          image: "{{ .Values.broker.image.repository }}:{{ .Values.broker.image.tag }}"
+          resources:
+            {{- toYaml .Values.broker.resources | nindent 12 }}
+          env:
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: RABBITMQ_PASS
+                  name: {{ .Values.secrets.secret_name }}
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  key: RABBITMQ_USER
+                  name: {{ .Values.secrets.secret_name }}
+            - name: RABBITMQ_ERLANG_COOKIE
+              valueFrom:
+                secretKeyRef:
+                  key: ERLANG_COOKIE
+                  name: {{ .Values.secrets.secret_name }}
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: RABBITMQ_PASS
+                  name: {{ .Values.secrets.secret_name }}
+            - name: RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: RABBITMQ_USER
+                  name: {{ .Values.secrets.secret_name }}
+            - name: RABBITMQ_ERL_COOKIE
+              valueFrom:
+                secretKeyRef:
+                  key: ERLANG_COOKIE
+                  name: {{ .Values.secrets.secret_name }}
+          ports:
+            - containerPort: {{ .Values.broker.containerPorts.amqp }}
+            - containerPort: {{ .Values.broker.containerPorts.manager }}
+      restartPolicy: Always

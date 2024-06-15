@@ -13,19 +13,21 @@ from src.schemas.exchange_messages import ResponseMessage
 
 PERIOD_SECS = 3600 * 5
 
+LOGGER = logging.getLogger(__name__)
+
 
 async def notify_user(config):
-    logging.info("Looking for scheduled recommendations")
+    LOGGER.info("Looking for scheduled recommendations")
     now = datetime.now()
 
     async with get_session(config) as session:
         recommendation_repository = RecommendationRepository(session)
         actual_recommendations = await recommendation_repository.filter_by_date(now)
 
-    logging.info(f"Found {len(actual_recommendations)} recommendations for today")
+    LOGGER.info(f"Found {len(actual_recommendations)} recommendations for today")
     async with get_broker_connection(config) as connection:
         for rec in actual_recommendations:
-            logging.debug(f"Sending to user {rec.user_id} notification")
+            LOGGER.debug(f"Sending to user {rec.user_id} notification")
             await publish_message(
                 connection,
                 RESPONSES_QUEUE_NAME,

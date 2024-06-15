@@ -1,0 +1,18 @@
+{{ if not .Values.postgres.external.to_use }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Release.Name }}-db-postgres
+  name: {{ .Release.Name }}-db-postgres
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-2"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  ports:
+    - port: {{ .Values.postgres.port }}
+      targetPort: {{ .Values.postgres.port }}
+  selector:
+    app: {{ .Release.Name }}-db-postgres
+{{ end }}

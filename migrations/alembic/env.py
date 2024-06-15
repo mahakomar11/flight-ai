@@ -1,9 +1,9 @@
+import os
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from src.config.config import get_config
 from src.infrastructure.database.models import Base
 
 # this is the Alembic Config object, which provides
@@ -25,11 +25,16 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-app_config = get_config()
+
+postgres_host = os.environ["POSTGRES_HOST"]
+postgres_port = os.environ["POSTGRES_PORT"]
+postgres_password = os.environ["POSTGRES_PASSWORD"]
+postgres_user = os.environ["POSTGRES_USER"]
+postgres_name = os.environ["POSTGRES_NAME"]
 
 config.set_main_option(
     "sqlalchemy.url",
-    f"postgresql://{app_config.postgres_user}:{app_config.postgres_password}@{app_config.postgres_host}:{app_config.postgres_port}/{app_config.postgres_name}",
+    f"postgresql://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_name}",
 )
 
 

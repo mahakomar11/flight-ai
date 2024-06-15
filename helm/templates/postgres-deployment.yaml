@@ -1,0 +1,58 @@
+{{ if not .Values.postgres.external.to_use }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Release.Name }}-db-postgres
+  name: {{ .Release.Name }}-db-postgres
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-2"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-db-postgres
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-db-postgres
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-db-postgres
+          image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+          resources:
+            {{- toYaml .Values.postgres.resources | nindent 12 }}
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_USER
+                  name: {{ .Values.secrets.secret_name }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_PASSWORD
+                  name: {{ .Values.secrets.secret_name }}
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_NAME
+                  name: {{ .Values.secrets.secret_name }}
+            - name: PGDATA
+              value: {{ .Values.postgres.pg_data }}
+          args:
+            - postgres
+            - -p
+            - "{{ .Values.postgres.port }}"
+            - -c
+            - shared_buffers=128MB
+            - -c
+            - max_connections=200
+          ports:
+            - containerPort: {{ .Values.postgres.port }}
+      restartPolicy: Always
+{{ end }}

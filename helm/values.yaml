@@ -1,0 +1,79 @@
+docker_registry: &registry us-central1-docker.pkg.dev/hybrid-carrier-337214/app  # Registry for components
+
+secrets:
+  secret_name: flightai-secret
+
+broker:
+  image:
+    repository: rabbitmq
+    tag: 3.9.17
+  resources:
+    limits:
+      memory: 1Gi
+      cpu: 1
+    requests:
+      memory: 700Mi
+      cpu: 0.5
+  replicaCount: 1
+  containerPorts:
+    amqp: 5672
+    manager: 15672
+
+chat:
+  image:
+    registry: *registry
+    repository: flightai_chat
+    tag: latest
+  resources:
+    limits:
+      memory: 300Mi
+      cpu: 0.1
+    requests:
+      memory: 200Mi
+      cpu: 0.05
+  replicaCount: 1
+
+recommendations:
+  image:
+    registry: *registry
+    repository: flightai_recommendations
+    tag: latest
+  resources:
+    limits:
+      memory: 300Mi
+      cpu: 0.1
+    requests:
+      memory: 200Mi
+      cpu: 0.05
+  replicaCount: 1
+
+  flight_api:
+    is_mock: true
+    path: recommendations/mocks/flight_info_api.json
+  openai_api:
+    is_mock: false
+    path: https://api.openai.com/v1
+
+migrations:
+  image:
+    registry: *registry
+    repository: flightai_migrations
+    tag: latest
+
+postgres:
+  external:
+    to_use: false
+    host: ...
+  port: 5432
+  # Ignored, if use_external_db: true
+  image:
+    repository: postgres
+    tag: latest
+  resources:
+    limits:
+      memory: 300Mi
+      cpu: 0.1
+    requests:
+      memory: 200Mi
+      cpu: 0.05
+  pg_data: /var/lib/postgresql/data/pgdata

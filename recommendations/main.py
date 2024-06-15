@@ -1,5 +1,5 @@
 import asyncio
-import logging
+import logging.config
 import sys
 
 from recommendations.notifier.notifier import PERIOD_SECS, check_notifications
@@ -7,7 +7,11 @@ from recommendations.services.handle_request import handle_user_request
 from src.config.config import get_config
 from src.infrastructure.broker.constants import REQUESTS_QUEUE_NAME
 from src.infrastructure.broker.rabbit import get_broker_connection, poll_consuming
+from src.logger.logger import build_log_config
 from src.schemas.exchange_messages import RequestMessage
+
+logging.config.dictConfig(build_log_config("DEBUG"))
+LOGGER = logging.getLogger(__name__)
 
 
 async def consume_requests():

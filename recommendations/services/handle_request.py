@@ -17,6 +17,8 @@ from src.infrastructure.database.session import get_session
 from src.schemas.exchange_messages import RequestMessage, ResponseMessage
 from src.schemas.recommendation import Recommendation
 
+LOGGER = logging.getLogger(__name__)
+
 
 async def handle_user_request(connection, request: RequestMessage):
     config = get_config()
@@ -47,7 +49,7 @@ async def handle_user_request(connection, request: RequestMessage):
     ) = await generation_service.generate_recommendations(
         user_answers=user.answers, flight=flight
     )
-    logging.info(f"Got recommendations for user {request.user_id}")
+    LOGGER.info(f"Got recommendations for user {request.user_id}")
 
     # Send first recommendation
     await publish_message(

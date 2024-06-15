@@ -5,7 +5,7 @@ COPY migrations/requirements.txt /app/
 
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-COPY src/ /app/src
+COPY src/infrastructure/database/models.py /app/src/infrastructure/database/models.py
 COPY alembic.ini /app/alembic.ini
 COPY migrations/alembic/ /app/migrations/alembic
 
