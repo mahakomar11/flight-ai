@@ -1,5 +1,6 @@
 import asyncio
 import logging.config
+import re
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
@@ -9,41 +10,27 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, ReplyKeyboardRemove
 
-from chat.constants.texts import (
-    AUTH_TEXT,
-    FLIGHT_DATE_QUESTION,
-    FLIGHT_NUMBER_QUESTION,
-    GREETING_TEXT_FOR_KNOWN,
-    GREETING_TEXT_FOR_UNKNOWN,
-)
-from helpers.user_form import get_user_answers
+from chat.bot.bot import FlightAIBot
+from chat.helpers.validate_date import is_valid_date
 from src.config.config import get_config
-from src.infrastructure.broker.constants import (
-    REQUESTS_QUEUE_NAME,
-    RESPONSES_QUEUE_NAME,
-)
-from src.infrastructure.broker.rabbit import (
-    get_broker_connection,
-    poll_consuming,
-    publish_message,
-)
-from src.infrastructure.database.repositories.user import UserRepository
-from src.infrastructure.database.session import get_session
+from src.infrastructure.broker.constants import RESPONSES_QUEUE_NAME
+from src.infrastructure.broker.rabbit import get_broker_connection, poll_consuming
 from src.logger.logger import build_log_config
-from src.schemas.exchange_messages import ResponseMessage
-from src.schemas.user import User
+from src.schemas.exchange_messages import RequestMessage, ResponseMessage
 
 logging.config.dictConfig(build_log_config("DEBUG"))
 LOGGER = logging.getLogger(__name__)
+
 config = get_config()
+
 bot = Bot(
     token=config.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML)
 )
-
 dp = Dispatcher()
-
 form_router = Router()
 dp.include_router(form_router)
+
+flightai_bot = FlightAIBot(config)
 
 
 class Form(StatesGroup):
@@ -57,15 +44,8 @@ async def command_start(message: Message) -> None:
     This handler receives messages with `/start` command
     """
     LOGGER.debug(f"Got /start command from user {message.chat.id}")
-    async with get_session(config) as session:
-        LOGGER.debug(f"Getting user with id {message.chat.id}")
-        user = await UserRepository(session).get(user_id=message.chat.id)
-        LOGGER.debug(f"Got user {user}")
-
-    if user is None:
-        await message.answer(GREETING_TEXT_FOR_UNKNOWN)
-    else:
-        await message.answer(GREETING_TEXT_FOR_KNOWN)
+    answer = await flightai_bot.start(message.chat.id)
+    await message.answer(answer)
 
 
 @dp.message(Command("filled"))
@@ -74,38 +54,56 @@ async def command_filled(message: Message) -> None:
     This handler receives messages with `/filled` command
     """
     LOGGER.warning(f"Getting form data for user {message.chat.id}")
-    user_answers = get_user_answers("mock")  # TODO: change to phone
-    user = User(id=message.chat.id, phone="mock", answers=user_answers)
-    async with get_session(config) as session:
-        await UserRepository(session).post(user)
-    await message.answer(AUTH_TEXT)
+    answer = await flightai_bot.approve_auth(message.chat.id)
+    await message.answer(answer)
 
 
 @form_router.message(Command("flight"))
 async def command_flight(message: Message, state: FSMContext) -> None:
     await state.set_state(Form.flight_number)
-    await message.answer(FLIGHT_NUMBER_QUESTION, reply_markup=ReplyKeyboardRemove())
+    answer = await flightai_bot.ask_flight_number(message.chat.id)
+    await message.answer(answer, reply_markup=ReplyKeyboardRemove())
 
 
-@form_router.message(Form.flight_number)
+@form_router.message(
+    Form.flight_number,
+    lambda message: re.match(
+        r"^([a-zA-Z0-9]{2}[a-zA-Z]?)(\d{1,4}[a-zA-Z]?)$", message.text
+    ),
+)
 async def process_flight_number(message: Message, state: FSMContext) -> None:
     await state.update_data(flight_number=message.text)
     await state.set_state(Form.flight_date)
-    await message.answer(FLIGHT_DATE_QUESTION, reply_markup=ReplyKeyboardRemove())
+    answer = await flightai_bot.ask_flight_date()
+    await message.answer(answer, reply_markup=ReplyKeyboardRemove())
 
 
-@form_router.message(Form.flight_date)
+@form_router.message(
+    Form.flight_number,
+    lambda message: not re.match(
+        r"^([a-zA-Z0-9]{2}[a-zA-Z]?)(\d{1,4}[a-zA-Z]?)$", message.text
+    ),
+)
+async def process_wrong_flight_number(message: Message, state: FSMContext) -> None:
+    await state.set_state(Form.flight_number)
+    answer = "Wrong number. Use IATA codes for flight number. It should be printed on your ticket."
+    await message.answer(answer, reply_markup=ReplyKeyboardRemove())
+
+
+@form_router.message(Form.flight_date, lambda message: is_valid_date(message.text))
 async def process_flight_date(message: Message, state: FSMContext) -> None:
     data = await state.update_data(flight_date=message.text)
     await state.clear()
-    await message.answer(
-        f"Great! Your flight number is {data['flight_number']} and flight date is {data['flight_date']}. "
-        f"We are preparing recommendations for you."
-    )
     data["user_id"] = message.chat.id
-    LOGGER.warning(f"Publishing to queue {data}")
-    async with get_broker_connection(config) as connection:
-        await publish_message(connection, REQUESTS_QUEUE_NAME, data)
+    answer = await flightai_bot.process_flight_data(RequestMessage(**data))
+    await message.answer(answer)
+
+
+@form_router.message(Form.flight_date, lambda message: not is_valid_date(message.text))
+async def process_wrong_flight_date(message: Message, state: FSMContext) -> None:
+    await state.set_state(Form.flight_date)
+    answer = "Wrong date. Use YYYY-MM-DD format for the flight date."
+    await message.answer(answer, reply_markup=ReplyKeyboardRemove())
 
 
 async def send_response(exchange_message: dict):

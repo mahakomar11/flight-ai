@@ -11,4 +11,4 @@ COPY chat/ /app/chat
 WORKDIR /app/
 ENV PYTHONPATH "/app"
 
-CMD ["python", "/app/chat/bot.py"]
+CMD ["python", "/app/chat/main.py"]

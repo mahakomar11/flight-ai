@@ -1,6 +1,6 @@
 GREETING_TEXT_FOR_UNKNOWN = """
 Welcome to the FlightAI! 🌙 It seems you're not registered yet.
-Complete our circadian assessment to get recommendations that align with your internal clocks!
+Complete a circadian assessment to get recommendations that align with your internal clocks!
 
 https://form.typeform.com/to/Wv8KDBuG
 
@@ -11,8 +11,21 @@ GREETING_TEXT_FOR_KNOWN = """
 Welcome to the FlightAI! 🌙 To get flight recommendations, use /flight command.
 """
 
-AUTH_TEXT = """
-Great! You are registered in our system. If you want flight recommendations, use /flight command.
+AUTH_TEXT_FOR_UNKNOWN = """
+Great! You are registered. If you want flight recommendations, use /flight command.
+"""
+
+AUTH_TEXT_FOR_KNOWN = """
+You are already registered. If you want flight recommendations, use /flight command.
+"""
+
+FLIGHT_TEXT_FOR_UNKNOWN = """
+It seems you're not registered yet.
+Complete a circadian assessment to get recommendations that align with your internal clocks!
+
+https://form.typeform.com/to/Wv8KDBuG
+
+When/if you finish with the form, use /filled.
 """
 
 FLIGHT_NUMBER_QUESTION = """
