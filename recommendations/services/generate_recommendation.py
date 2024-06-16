@@ -8,7 +8,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 class GenerationService:
-    NUMBER_OF_DAYS = 5
+    RELATIVE_DAYS = [-2, -1, 0, 1, 2]
+    INITIAL_CONCLUSION = (
+        "**You don't need to remember it, I'll send you notifications for each day**🤗"
+    )
+    DAILY_INTRO = "Hi! Here is your recommendations for today😊"
 
     def __init__(self, openai_client: OpenAIClient, model: str = "gpt-4o-2024-05-13"):
         self.openai_client = openai_client
@@ -66,7 +70,9 @@ class GenerationService:
         ]
 
         recommendation_parts = []
-        while len(recommendation_parts) != self.NUMBER_OF_DAYS + 2:
+        while (
+            len(recommendation_parts) != len(self.RELATIVE_DAYS) + 2
+        ):  # Check for the format
             LOGGER.warning(
                 f"Try again ask the model, now {len(recommendation_parts)} parts of recommendation gotten"
             )
@@ -75,20 +81,29 @@ class GenerationService:
             )
             recommendation_parts = raw_recommendation.split("---\n")
 
+        recommendations_per_day = self._schedule_recommendations(
+            flight.departure.datetime, recommendation_parts[1:-1]
+        )
+
+        return (
+            self._get_initial_recommendation(raw_recommendation),
+            recommendations_per_day,
+        )
+
+    def _get_initial_recommendation(self, recommendation: str) -> str:
+        return "\n\n".join(
+            [recommendation.replace("---\n", ""), self.INITIAL_CONCLUSION]
+        )
+
+    def _schedule_recommendations(
+        self, flight_date: datetime, recommendations_for_days: list[str]
+    ):
         recommendations_per_day = dict()
-        for relative_day, rec_part in zip(
-            [-2, -1, 0, 1, 2], recommendation_parts[1:-1]
-        ):
+        for relative_day, rec_part in zip(self.RELATIVE_DAYS, recommendations_for_days):
             recommendations_per_day[
-                self.get_scheduled_at(
-                    flight.departure.datetime, relative_day=relative_day
-                )
-            ] = rec_part
-
-        return self.prettier_recommedation(raw_recommendation), recommendations_per_day
-
-    def prettier_recommedation(self, recommendation: str) -> str:
-        return recommendation.replace("---\n", "")
+                self.get_scheduled_at(flight_date, relative_day=relative_day)
+            ] = "\n\n".join([self.DAILY_INTRO, rec_part])
+        return recommendations_per_day
 
     @staticmethod
     def flatten_user_answers(user_answers: dict[str, str]) -> str:
