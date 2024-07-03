@@ -11,7 +11,7 @@ from src.infrastructure.database.repositories.recommendation import (
 from src.infrastructure.database.session import get_session
 from src.schemas.exchange_messages import ResponseMessage
 
-PERIOD_SECS = 3600 * 5
+PERIOD_SECS = 60
 
 LOGGER = logging.getLogger(__name__)
 

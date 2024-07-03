@@ -48,8 +48,8 @@ recommendations:
   replicaCount: 1
 
   flight_api:
-    is_mock: true
-    path: recommendations/mocks/flight_info_api.json
+    is_mock: false
+    path: flight-info-api.p.rapidapi.com
   openai_api:
     is_mock: false
     path: https://api.openai.com/v1
